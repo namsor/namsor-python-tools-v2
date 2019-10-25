@@ -20,7 +20,9 @@ usage: namsor_tools.py [-h] -apiKey APIKEY -i INPUTFILE
 ```			   
 
 ## Detailed usage		  
-usage: python namsor_tools.py -apiKey <apiKey> [-countryIso2 <countryIso2>] [-digest]
+
+```	
+python namsor_tools.py -apiKey <apiKey> [-countryIso2 <countryIso2>] [-digest]
        [-e <encoding>] -f <inputDataFormat> [-h] [-header] -i <inputFile>
        [-o <outputFile>] [-r] -service <service> [-uid] [-w]
  -apiKey,--apiKey <apiKey>                  NamSor API Key
