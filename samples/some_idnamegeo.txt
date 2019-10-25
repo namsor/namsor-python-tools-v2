@@ -1,0 +1,6 @@
+id1|John Smith|US
+id2|Mary Smith|GB
+id3|Elena Rossi|IT
+id4|Robert Durieux|FR
+id5|Durieux Robert|FR
+id6|Smith Mary|GB

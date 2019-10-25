@@ -1,0 +1,4 @@
+id12|John W.|Smith|US
+id13|Mary|Smith|GB
+id14|Elena|Rossi|IT
+id15|Robert|Durieux|FR
