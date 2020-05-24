@@ -98,19 +98,19 @@ rowId = 0
 
 
 class NamsorTools:
-    
+
     def __init__(self, commandLineOptions):
-        
+
         self.__done = SynchronizedSet(set(), synchronized=True)
 
         self.__separatorOut = "|"
         self.__separatorIn = "|"
 
-        
+
         self.__TIMEOUT = 30000
         self.__withUID = False
         self.__recover = False
-        self.__digest = None    
+        self.__digest = None
 
         self.__firstLastNamesGeoIn = {}
         self.__firstLastNamesIn = {}
@@ -120,14 +120,14 @@ class NamsorTools:
         self.__commandLineOptions = commandLineOptions
 
         configuration = openapi_client.Configuration()
-        configuration.api_key['X-API-KEY'] = commandLineOptions["apiKey"]  
-        configuration.__TIMEOUT = self.__TIMEOUT       
+        configuration.api_key['X-API-KEY'] = commandLineOptions["apiKey"]
+        configuration.__TIMEOUT = self.__TIMEOUT
         self.__client = ApiClient(configuration)
 
         self.__api = PersonalApi(self.__client)
         self.__adminApi = AdminApi(self.__client)
         self.__withUID = commandLineOptions["uid"]
-        
+
         self.__recover = commandLineOptions["recover"]
 
         if commandLineOptions["digest"]:
@@ -135,7 +135,7 @@ class NamsorTools:
                 self.__digest = hashlib.md5()
             except Exception as ex:
                 logging.getLogger(NamsorTools.__class__.__name__).log(logging.CRITICAL, "Digest algo not found " + DEFAULT_DIGEST_ALGO, ex)
-                
+
 
     def digest(self, inClear:str):
         if self.getDigest() == None or inClear == None or inClear == '':
@@ -144,13 +144,13 @@ class NamsorTools:
             self.__digest.update(inClear.encode())
             hashbytes = self.__digest.digest()
 
-            return hashbytes.hex()      
+            return hashbytes.hex()
 
 
     #TODO : line 433
     def process(self,service,reader,writer,softwareNameAndVersion):
         global uidGen
-        
+
         lineId = 0
         inputDataFormat = self.__commandLineOptions["inputDataFormat"]
         inputHeaders = None
@@ -162,7 +162,7 @@ class NamsorTools:
             raise NamSorToolException("Invalid inputFileFormat " + inputDataFormat)
         outputHeaders = None
         for i in range(len(SERVICES)):
-            if (SERVICES[i]==service): 
+            if (SERVICES[i]==service):
                 outputHeaders = OUTPUT_DATA_HEADERS[i]
                 break
         if (outputHeaders == None):
@@ -174,23 +174,23 @@ class NamsorTools:
 
         dataLenExpected = len(inputHeaders) + 1 if self.isWithUID() else len(inputHeaders)
 
-        dataFormatExpected = ""    
+        dataFormatExpected = ""
 
         if self.isWithUID():
             dataFormatExpected += "uid" + self.__separatorIn
-        
+
         countryIso2Default = self.getCommandLineOptions()["countryIso2"]
 
         for i in range (len(inputHeaders)):
             dataFormatExpected += inputHeaders[i]
             if (i < len(inputHeaders) - 1):
                 dataFormatExpected+=(self.__separatorIn)
-        
+
         line = reader.readline()
 
         while(line):
             if (line and not line.startswith("#")):
-                
+
                 if line.endswith("|"):
                     line = line + " "
                 lineData = line.split("|")
@@ -201,14 +201,14 @@ class NamsorTools:
                 uid = ""
 
                 col = 0
-                
+
                 if (self.isWithUID()):
                     uid = lineData[col]
                     col+=1
                 else:
                     uid = "uid" + str(uidGen)
                     uidGen+=1
-                
+
                 if (self.isRecover() and uid in self.__done):
                     pass
                 else:
@@ -220,7 +220,7 @@ class NamsorTools:
                         firstLastNameIn = FirstLastNameIn()
                         firstLastNameIn.id = uid
                         firstLastNameIn.first_name = firstName
-                        firstLastNameIn.last_name = lastName.replace("\n","")
+                        firstLastNameIn.last_name = str(lastName.replace("\n",""))
                         self.__firstLastNamesIn[uid] = firstLastNameIn
                     elif inputDataFormat == INPUT_DATA_FORMAT_FNLNGEO :
                         firstName = lineData[col]
@@ -256,22 +256,22 @@ class NamsorTools:
                         personalNameGeoIn.name = fullName.replace("\n","")
                         personalNameGeoIn.country_iso2 = countryIso2.replace("\n","")
                         self.__personalNamesGeoIn[uid] = personalNameGeoIn
-                    
+
 
                     self.processData(service, outputHeaders, writer, False, softwareNameAndVersion)
-            
+
             lineId+=1
             line = reader.readline()
-        
+
         self.processData(service, outputHeaders, writer, True, softwareNameAndVersion)
 
 
     def getCommandLineOptions(self):
         return self.__commandLineOptions
 
-    
+
     def run(self):
-        
+
         apiKey = self.getCommandLineOptions()["apiKey"]
         if apiKey==None or not apiKey:
             raise NamSorToolException("Missing API KEY")
@@ -281,12 +281,12 @@ class NamsorTools:
         except ApiException as ex:
             logging.getLogger(NamsorTools.__class__.__name__).log(logging.CRITICAL, None, ex)
             raise NamSorToolException("Can't get the API version " + ex)
-        
+
 
         try:
             service = self.getCommandLineOptions()["service"]
             inputFileName = self.getCommandLineOptions()["inputFile"]
-            
+
             if(inputFileName==None or not inputFileName):
                 raise NamSorToolException("Missing inputFile")
             inputFile = None
@@ -300,9 +300,9 @@ class NamsorTools:
             if(outputFileName==None or not outputFileName):
                 outputFileName = inputFileName + "." + service + (".digest" if self.__digest!=None else "") + ".namsor"
                 logging.getLogger(NamsorTools.__class__.__name__).info("Outputing to " + outputFileName)
-            
+
             outputFile = open(outputFileName,'w+')
-            
+
             outputFileOverwrite =  self.getCommandLineOptions()["overwrite"]
             if os.path.exists(outputFileName) and not outputFileOverwrite and not self.isRecover():
                 raise NamSorToolException("OutputFile " + inputFileName + " already exists, use -r to recover and continue job")
@@ -315,9 +315,9 @@ class NamsorTools:
                 encoding = "UTF-8"
             if self.isRecover() and os.path.exists(inputFileName):
                 logging.getLogger(NamsorTools.__class__.__name__).info("Recovering from existing " + outputFileName)
-                
+
                 readerDone = open(inputFileName,'r',encoding=encoding)
-                
+
                 doneLine = readerDone.readline()
                 line = 0
                 length = 1
@@ -334,27 +334,27 @@ class NamsorTools:
                         logging.getLogger(NamsorTools.__class__.__name__).info("Loading from existing " + outputFileName + ":" + str(line))
                     line+=1
                 readerDone.close()
-            
+
             reader = open(inputFileName,'r',encoding = encoding)
             mode = 'a' if self.isRecover() else 'w'
-            
+
             writer = open(outputFileName,mode,encoding=encoding)
-            
+
             self.process(service,reader,writer,softwareNameAndVersion)
 
         except Exception as ex:
             logging.getLogger(NamsorTools.__class__.__name__).log(logging.CRITICAL, ex)
-            
+
 
     def appendHeader(self, writer, inputHeaders, outputHeaders):
         writer.write('#uid' + self.__separatorOut)
 
         for inputHeader in inputHeaders:
             writer.write(inputHeader + self.__separatorOut)
-        
+
         for outputHeader in outputHeaders:
             writer.write(outputHeader + self.__separatorOut)
-        
+
         writer.write('version' + self.__separatorOut)
         writer.write('rowId'+"\n")
 
@@ -368,9 +368,9 @@ class NamsorTools:
 
         for personalName in origined.personal_names:
             result[personalName.id] = personalName
-        
+
         return result
-    
+
     #names -> list[FirstLastNameGeoIn]
     def processOriginGeo(self, names):
         namesNoGeo = []
@@ -381,9 +381,9 @@ class NamsorTools:
             nameNoGeo.last_name = name.last_name
 
             namesNoGeo.append(nameNoGeo)
-        
+
         return self.processOrigin(namesNoGeo)
-    
+
     #names -> list[FirstLastNameIn]
     def processOrigin(self, names):
         result = {}
@@ -393,9 +393,9 @@ class NamsorTools:
 
         for personalName in origined.personal_names:
             result[personalName.id] = personalName
-        
+
         return result
-    
+
     #names -> list[FirstLastNameIn]
     def processGender(self, names):
         result = {}
@@ -405,9 +405,9 @@ class NamsorTools:
 
         for personalName in gendered.personal_names:
             result[personalName.id] = personalName
-        
+
         return result
-    
+
     #names -> list[PersonalNameIn]
     def processGenderFull(self, names):
         result = {}
@@ -417,9 +417,9 @@ class NamsorTools:
 
         for personalName in gendered.personal_names:
             result[personalName.id] = personalName
-        
+
         return result
-    
+
     #names -> list[PersonalNameGeoIn]
     def processGenderFullGeo(self, names):
         result = {}
@@ -429,7 +429,7 @@ class NamsorTools:
 
         for personalName in gendered.personal_names:
             result[personalName.id] = personalName
-        
+
         return result
 
     #names -> list[PersonalNameIn]
@@ -441,7 +441,7 @@ class NamsorTools:
 
         for personalName in parsed.personal_names:
             result[personalName.id] = personalName
-        
+
         return result
 
     #names -> list[FirstLastNameGeoIn]
@@ -453,9 +453,9 @@ class NamsorTools:
 
         for personalName in gendered.personal_names:
             result[personalName.id] = personalName
-        
+
         return result
-    
+
     #names -> list[PersonalNameGeoIn]
     def processParseGeo(self, names):
         result = {}
@@ -465,7 +465,7 @@ class NamsorTools:
 
         for personalName in parsed.personal_names:
             result[personalName.id] = personalName
-        
+
         return result
 
     #names -> list[FirstLastNameGeoIn]
@@ -477,9 +477,9 @@ class NamsorTools:
 
         for personalName in racedEthnicized.personal_names:
             result[personalName.id] = personalName
-        
+
         return result
-    
+
 
     def processData(self, service:str, outputHeaders, writer, flushBuffers, softwareNameAndVersion):
         if(flushBuffers and len(self.__firstLastNamesIn) != 0 or len(self.__firstLastNamesIn) >= BATCH_SIZE):
@@ -489,9 +489,9 @@ class NamsorTools:
             elif service == SERVICE_NAME_GENDER:
                 genders = self.processGender(list(self.__firstLastNamesIn.values()))
                 self.append(writer, outputHeaders, self.__firstLastNamesIn, genders, softwareNameAndVersion)
-        
+
             self.__firstLastNamesIn.clear()
-        
+
         if(flushBuffers and len(self.__firstLastNamesGeoIn) != 0 or len(self.__firstLastNamesGeoIn) >= BATCH_SIZE):
             if service == SERVICE_NAME_ORIGIN:
                 origins = self.processOriginGeo(list(self.__firstLastNamesGeoIn.values()))
@@ -505,7 +505,7 @@ class NamsorTools:
             elif service == SERVICE_NAME_USRACEETHNICITY:
                 usRaceEthnicities = self.processUSRaceEthnicity(list(self.__firstLastNamesGeoIn.values()))
                 self.append(writer, outputHeaders, self.__firstLastNamesGeoIn, usRaceEthnicities, softwareNameAndVersion)
-        
+
             self.__firstLastNamesGeoIn.clear()
 
         if(flushBuffers and len(self.__personalNamesIn) != 0 or len(self.__personalNamesIn) >= BATCH_SIZE):
@@ -515,7 +515,7 @@ class NamsorTools:
             elif service == SERVICE_NAME_GENDER:
                 genders = self.processGenderFull(list(self.__personalNamesIn.values()))
                 self.append(writer, outputHeaders, self.__personalNamesIn, genders, softwareNameAndVersion)
-            
+
             self.__personalNamesIn.clear()
 
         if(flushBuffers and len(self.__personalNamesGeoIn) != 0 or len(self.__personalNamesGeoIn) >= BATCH_SIZE):
@@ -525,9 +525,9 @@ class NamsorTools:
             elif service == SERVICE_NAME_GENDER:
                 genders = self.processGenderFullGeo(list(self.__personalNamesGeoIn.values()))
                 self.append(writer, outputHeaders, self.__personalNamesGeoIn, genders, softwareNameAndVersion)
-            
+
             self.__personalNamesGeoIn.clear()
-        
+
 
 
     def append(self, writer, outputHeaders, inp, output, softwareNameAndVersion):
@@ -549,14 +549,17 @@ class NamsorTools:
                 writer.write(self.digest(inputObj.name) + self.__separatorOut)
             elif isinstance(inputObj, PersonalNameGeoIn):
                 writer.write(self.digest(inputObj.name) + self.__separatorOut + inputObj.country_iso2 + self.__separatorOut)
-            else: 
+            else:
                 raise ValueError("Serialization of " + inputObj.__class__.__name__ + " not supported")
 
-            if outputObj is None: 
+            if outputObj is None:
                 for outputHeader in outputHeaders:
                     writer.write("" + self.__separatorOut)
             elif isinstance(outputObj, FirstLastNameGenderedOut):
-                scriptName = computeScriptFirst(outputObj.last_name)
+                if computeScriptFirst(outputObj.last_name) != None:
+                    scriptName = computeScriptFirst(outputObj.last_name)
+                else:
+                    scriptName = "Latin"
                 writer.write(str(outputObj.likely_gender) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.probability_calibrated) + self.__separatorOut + str(outputObj.gender_scale) + self.__separatorOut + scriptName + self.__separatorOut)
             elif isinstance(outputObj, FirstLastNameOriginedOut):
                 scriptName = computeScriptFirst(outputObj.last_name)
@@ -577,16 +580,16 @@ class NamsorTools:
                 writer.write(firstNameParsed + self.__separatorOut + lastNameParsed + self.__separatorOut + str(outputObj.name_parser_type) + self.__separatorOut + str(outputObj.name_parser_type_alt) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + scriptName + self.__separatorOut)
             else:
                 raise ValueError("Serialization of " + outputObj.__class__.__name__ + " not supported")
-            
+
             writer.write(softwareNameAndVersion + self.__separatorOut)
             writer.write(str(rowId) + "\n")
             rowId+=1
-        
+
         writer.flush()
         if self.isRecover():
             for k in flushedUID:
                 self.__done.add(k)
-        
+
         if rowId % 100 == 0 and rowId < 1000 or rowId % 1000 == 0 and rowId < 10000 or rowId % 10000 == 0 and rowId < 100000 or rowId % 100000 == 0:
             logging.info("Processed " + str(rowId) + " rows.")
 
@@ -594,10 +597,10 @@ class NamsorTools:
 
     def isWithUID(self):
         return self.__withUID
-    
+
     def isRecover(self):
         return self.__recover
-    
+
     def getDigest(self):
         return self.__digest
 
@@ -611,7 +614,7 @@ def computeScriptFirst(someString):
             continue
 
         return script
-    
+
     return None
 
 
@@ -619,7 +622,7 @@ def main():
     try:
         parser = argparse.ArgumentParser(description="Main parcer for namsor_commandline_tool")
         help_parser = argparse.ArgumentParser(description="Help option parcer for namsor_commandline_tool", add_help=False, formatter_class=argparse.HelpFormatter)
-        
+
         #setting up the main parser
         parser.add_argument('-apiKey','--apiKey', required=True, help="NamSor API Key", dest="apiKey")
         parser.add_argument('-i',"--inputFile", required=True , help="input file name", dest="inputFile")
@@ -634,19 +637,19 @@ def main():
         parser.add_argument("-service","--endpoint", required = True, help="service : parse / gender / origin / diaspora / usraceethnicity", dest="service")
         parser.add_argument("-e","--encoding", required = False, help="encoding : UTF-8 by default", dest="encoding")
 
-        
+
         args = parser.parse_args()
-        
+
         tools = NamsorTools(vars(args))
 
         if(tools.getDigest()!=None):
             logging.getLogger(NamsorTools.__class__.__name__).info("In output, all names will be digested ex. John Smith -> " + tools.digest("John Smith"))
-          
+
         tools.run()
 
     except ArgumentError as ex:
         logging.getLogger(NamsorTools.__class__.__name__).log(logging.CRITICAL, None, ex)
-    
+
     except NamSorToolException as ex:
         logging.getLogger(NamsorTools.__class__.__name__).log(logging.CRITICAL, None, ex)
 
