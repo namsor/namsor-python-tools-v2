@@ -9,6 +9,12 @@ pip install synchronized-set
 ```
 NB: we use Unix conventions for file paths, ex. samples/some_fnln.txt but on MS Windows that would be samples\some_fnln.txt
 
+Then clone this project and start from the base directory. 
+```bash
+git clone https://github.com/namsor/namsor-python-tools-v2/
+cd namsor-python-tools-v2
+```
+
 ## Running
 
 ```bash
