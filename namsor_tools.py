@@ -82,9 +82,9 @@ SERVICES = [
 
 OUTPUT_DATA_PARSE_HEADER = ["firstNameParsed", "lastNameParsed", "nameParserType", "nameParserTypeAlt", "nameParserTypeScore", "script"]
 OUTPUT_DATA_GENDER_HEADER = ["likelyGender", "likelyGenderScore", "probabilityCalibrated", "genderScale", "script"]
-OUTPUT_DATA_ORIGIN_HEADER  = ["countryOrigin", "countryOriginAlt", "countryOriginScore", "script"]
+OUTPUT_DATA_ORIGIN_HEADER  = ["countryOrigin", "countryOriginAlt", "countryOriginScore", "probabilityCalibrated", "probabilityAltCalibrated", "script"]
 OUTPUT_DATA_DIASPORA_HEADER = ["ethnicity", "ethnicityAlt", "ethnicityScore", "script"]
-OUTPUT_DATA_USRACEETHNICITY_HEADER = ["raceEthnicity", "raceEthnicityAlt", "raceEthnicityScore", "script"]
+OUTPUT_DATA_USRACEETHNICITY_HEADER = ["raceEthnicity", "raceEthnicityAlt", "raceEthnicityScore", "probabilityCalibrated", "probabilityAltCalibrated", "script"]
 OUTPUT_DATA_HEADERS = [
     OUTPUT_DATA_PARSE_HEADER,
     OUTPUT_DATA_GENDER_HEADER,
@@ -315,7 +315,7 @@ class NamsorTools:
                 encoding = "UTF-8"
             if self.isRecover() and os.path.exists(inputFileName):
                 logging.getLogger(NamsorTools.__class__.__name__).info("Recovering from existing " + outputFileName)
-
+                print("Recovering from existing " + outputFileName)
                 readerDone = open(inputFileName,'r',encoding=encoding)
 
                 doneLine = readerDone.readline()
@@ -330,8 +330,9 @@ class NamsorTools:
                             logging.getLogger(NamsorTools.__class__.__name__).warning("Line " + str(line) + " doneLine=" + doneLine + " len=" + str(existingData.length) + "!=" + str(length))
                         self.__done.add(existingData[0])
                     doneLine = readerDone.readline()
-                    if line%100000 == 0:
+                    if line%1000 == 0:
                         logging.getLogger(NamsorTools.__class__.__name__).info("Loading from existing " + outputFileName + ":" + str(line))
+                        print("Loading from existing " + outputFileName + ":" + str(line))
                     line+=1
                 readerDone.close()
 
@@ -563,16 +564,16 @@ class NamsorTools:
                 writer.write(str(outputObj.likely_gender) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.probability_calibrated) + self.__separatorOut + str(outputObj.gender_scale) + self.__separatorOut + scriptName + self.__separatorOut)
             elif isinstance(outputObj, FirstLastNameOriginedOut):
                 scriptName = computeScriptFirst(outputObj.last_name)
-                writer.write(str(outputObj.country_origin) + self.__separatorOut + str(outputObj.country_origin_alt) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + scriptName + self.__separatorOut)
+                writer.write(str(outputObj.country_origin) + self.__separatorOut + str(outputObj.country_origin_alt) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.probability_calibrated) + self.__separatorOut + str(outputObj.probability_alt_calibrated) + self.__separatorOut + scriptName + self.__separatorOut)
             elif isinstance(outputObj, FirstLastNameDiasporaedOut):
                 scriptName = computeScriptFirst(outputObj.last_name)
                 writer.write(str(outputObj.ethnicity) + self.__separatorOut + str(outputObj.ethnicity_alt) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + scriptName + self.__separatorOut)
             elif isinstance(outputObj, FirstLastNameUSRaceEthnicityOut):
                 scriptName = computeScriptFirst(outputObj.last_name)
-                writer.write(str(outputObj.race_ethnicity) + self.__separatorOut + str(outputObj.race_ethnicity_alt) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + scriptName + self.__separatorOut)
+                writer.write(str(outputObj.race_ethnicity) + self.__separatorOut + str(outputObj.race_ethnicity_alt) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.probability_calibrated)  + self.__separatorOut + str(outputObj.probability_alt_calibrated) + self.__separatorOut + scriptName + self.__separatorOut)
             elif isinstance(outputObj, PersonalNameGenderedOut):
                 scriptName = computeScriptFirst(outputObj.name)
-                writer.write(str(outputObj.likely_gender) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.gender_scale) + self.__separatorOut + scriptName + self.__separatorOut)
+                writer.write(str(outputObj.likely_gender) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.probability_calibrated) + self.__separatorOut + str(outputObj.gender_scale) + self.__separatorOut + scriptName + self.__separatorOut)
             elif isinstance(outputObj, PersonalNameParsedOut):
                 firstNameParsed = outputObj.first_last_name.first_name if outputObj.first_last_name else ""
                 lastNameParsed = outputObj.first_last_name.last_name if outputObj.first_last_name else ""
@@ -592,6 +593,8 @@ class NamsorTools:
 
         if rowId % 100 == 0 and rowId < 1000 or rowId % 1000 == 0 and rowId < 10000 or rowId % 10000 == 0 and rowId < 100000 or rowId % 100000 == 0:
             logging.info("Processed " + str(rowId) + " rows.")
+            print("Processed " + str(rowId) + " rows.")
+
 
 
 
