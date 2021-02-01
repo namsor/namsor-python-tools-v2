@@ -11,7 +11,6 @@ from argparse import ArgumentError
 
 import logging
 from namsor_exception import NamSorToolException
-import unicodedata2
 
 #API imports
 import openapi_client
@@ -557,27 +556,24 @@ class NamsorTools:
                 for outputHeader in outputHeaders:
                     writer.write("" + self.__separatorOut)
             elif isinstance(outputObj, FirstLastNameGenderedOut):
-                if computeScriptFirst(outputObj.last_name) != None:
-                    scriptName = computeScriptFirst(outputObj.last_name)
-                else:
-                    scriptName = "Latin"
+                scriptName = outputObj.script
                 writer.write(str(outputObj.likely_gender) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.probability_calibrated) + self.__separatorOut + str(outputObj.gender_scale) + self.__separatorOut + scriptName + self.__separatorOut)
             elif isinstance(outputObj, FirstLastNameOriginedOut):
-                scriptName = computeScriptFirst(outputObj.last_name)
+                scriptName = outputObj.script
                 writer.write(str(outputObj.country_origin) + self.__separatorOut + str(outputObj.country_origin_alt) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.probability_calibrated) + self.__separatorOut + str(outputObj.probability_alt_calibrated) + self.__separatorOut + scriptName + self.__separatorOut)
             elif isinstance(outputObj, FirstLastNameDiasporaedOut):
-                scriptName = computeScriptFirst(outputObj.last_name)
+                scriptName = outputObj.script
                 writer.write(str(outputObj.ethnicity) + self.__separatorOut + str(outputObj.ethnicity_alt) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + scriptName + self.__separatorOut)
             elif isinstance(outputObj, FirstLastNameUSRaceEthnicityOut):
-                scriptName = computeScriptFirst(outputObj.last_name)
+                scriptName = outputObj.script
                 writer.write(str(outputObj.race_ethnicity) + self.__separatorOut + str(outputObj.race_ethnicity_alt) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.probability_calibrated)  + self.__separatorOut + str(outputObj.probability_alt_calibrated) + self.__separatorOut + scriptName + self.__separatorOut)
             elif isinstance(outputObj, PersonalNameGenderedOut):
-                scriptName = computeScriptFirst(outputObj.name)
+                scriptName = outputObj.script
                 writer.write(str(outputObj.likely_gender) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.probability_calibrated) + self.__separatorOut + str(outputObj.gender_scale) + self.__separatorOut + scriptName + self.__separatorOut)
             elif isinstance(outputObj, PersonalNameParsedOut):
                 firstNameParsed = outputObj.first_last_name.first_name if outputObj.first_last_name else ""
                 lastNameParsed = outputObj.first_last_name.last_name if outputObj.first_last_name else ""
-                scriptName = computeScriptFirst(outputObj.name)
+                scriptName = outputObj.script
                 writer.write(firstNameParsed + self.__separatorOut + lastNameParsed + self.__separatorOut + str(outputObj.name_parser_type) + self.__separatorOut + str(outputObj.name_parser_type_alt) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + scriptName + self.__separatorOut)
             else:
                 raise ValueError("Serialization of " + outputObj.__class__.__name__ + " not supported")
@@ -607,18 +603,6 @@ class NamsorTools:
     def getDigest(self):
         return self.__digest
 
-
-
-def computeScriptFirst(someString):
-    for i in range(len(someString)):
-        c = someString[i]
-        script = unicodedata2.script_cat(c)[0]
-        if script == "Common":
-            continue
-
-        return script
-
-    return None
 
 
 def main():
