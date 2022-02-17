@@ -1,4 +1,0 @@
-id12|John W.|Smith|US
-id15|Robert|Durieux|US
-id16|Jordan|Jackson|US
-id17|Carmen|Garcia|US
