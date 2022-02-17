@@ -121,13 +121,18 @@ class NamsorTools:
         configuration = openapi_client.Configuration()
         configuration.api_key['X-API-KEY'] = commandLineOptions["apiKey"]
         configuration.__TIMEOUT = self.__TIMEOUT
-        self.__client = ApiClient(configuration)
+
+        if commandLineOptions["usraceethnicityoption"] :
+            self.__client = ApiClient(configuration,"X-OPTION-USRACEETHNICITY-TAXONOMY",commandLineOptions["usraceethnicityoption"])
+        else :
+            self.__client = ApiClient(configuration)
 
         self.__api = PersonalApi(self.__client)
         self.__adminApi = AdminApi(self.__client)
         self.__withUID = commandLineOptions["uid"]
 
         self.__recover = commandLineOptions["recover"]
+
 
         if commandLineOptions["digest"]:
             try:
@@ -195,7 +200,7 @@ class NamsorTools:
                 lineData = line.split("|")
 
                 if len(lineData) != dataLenExpected:
-                    raise NamSorToolException("Line " + lineId + ", expected input with format : " + dataFormatExpected + " line = " + line)
+                    raise NamSorToolException("Line " + str(lineId) + ", expected input with format : " + dataFormatExpected + " line = " + line)
 
                 uid = ""
 
@@ -623,7 +628,7 @@ def main():
         parser.add_argument("-digest","--digest", required = False, help="SHA-256 digest names in output", dest="digest",action = "store_true")
         parser.add_argument("-service","--endpoint", required = True, help="service : parse / gender / origin / diaspora / usraceethnicity", dest="service")
         parser.add_argument("-e","--encoding", required = False, help="encoding : UTF-8 by default", dest="encoding")
-
+        parser.add_argument("-usraceethnicityoption","--usraceethnicityoption", required = False, help=" extra usraceethnicity option USRACEETHNICITY-4CLASSES USRACEETHNICITY-4CLASSES-CLASSIC USRACEETHNICITY-6CLASSES", dest="usraceethnicityoption")
 
         args = parser.parse_args()
 
