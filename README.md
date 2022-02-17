@@ -20,39 +20,46 @@ cd namsor-python-tools-v2
 
 ```bash
 python namsor_tools.py
-usage: namsor_tools.py [-h] -apiKey APIKEY -i INPUTFILE
-                       [-countryIso2 COUNTRYISO2] [-o OUTPUTFILE] [-w] [-r] -f
-                       INPUTDATAFORMAT [-header] [-uid] [-digest] -service
-                       SERVICE [-e ENCODING]
+python3 namsor_tools.py [-h] -apiKey APIKEY -i INPUTFILE 
+                        [-countryIso2 COUNTRYISO2] [-o OUTPUTFILE] [-w] [-r] -f 
+                        INPUTDATAFORMAT [-header] [-uid] [-digest] 
+                        -service <gender|country|origin|parse|diaspora|usraceethnicity> 
+                        [-e ENCODING] [-usraceethnicityoption USRACEETHNICITYOPTION]                       
 ```			   
 
 ## Detailed usage		  
 
 ```	
-python namsor_tools.py -apiKey <apiKey> [-countryIso2 <countryIso2>] [-digest]
-       [-e <encoding>] -f <inputDataFormat> [-h] [-header] -i <inputFile>
-       [-o <outputFile>] [-r] -service <service> [-uid] [-w]
- -apiKey,--apiKey <apiKey>                  NamSor API Key
- -countryIso2,--countryIso2 <countryIso2>   countryIso2 default
- -digest,--digest                           SHA-256 digest names in output
- -e,--encoding <encoding>                   encoding : UTF-8 by default
- -f,--inputDataFormat <inputDataFormat>     input data format : first
-                                            name, last name (fnln) / first
-                                            name, last name, geo country
-                                            iso2 (fnlngeo) / full name
-                                            (name) / full name, geo
-                                            country iso2 (namegeo)
- -h,--help                                  get help
- -header,--header                           output header
- -i,--inputFile <inputFile>                 input file name
- -o,--outputFile <outputFile>               output file name
- -r,--recover                               continue from a job (requires
-                                            uid)
- -service,--endpoint <service>              service : parse / gender /
-                                            origin / diaspora /
-                                            usraceethnicity
- -uid,--uid                                 input data has an ID prefix
- -w,--overwrite                             overwrite existing output file
+python3
+usage: namsor_tools.py [-h] -apiKey APIKEY -i INPUTFILE [-countryIso2 COUNTRYISO2] [-o OUTPUTFILE] [-w] [-r] -f INPUTDATAFORMAT [-header] [-uid] [-digest] -service SERVICE [-e ENCODING]
+                       [-usraceethnicityoption USRACEETHNICITYOPTION]
+
+Main parcer for namsor_commandline_tool
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -apiKey APIKEY, --apiKey APIKEY
+                        NamSor API Key
+  -i INPUTFILE, --inputFile INPUTFILE
+                        input file name
+  -countryIso2 COUNTRYISO2, --countryIso2 COUNTRYISO2
+                        countryIso2 default
+  -o OUTPUTFILE, --outputFile OUTPUTFILE
+                        output file name
+  -w, --overwrite       overwrite existing output file
+  -r, --recover         continue from a job (requires uid)
+  -f INPUTDATAFORMAT, --inputDataFormat INPUTDATAFORMAT
+                        input data format : first name, last name (fnln) / first name, last name, geo country iso2 (fnlngeo) / full name (name) / full name, geo country iso2 (namegeo)
+  -header, --header     output header
+  -uid, --uid           input data has an ID prefix
+  -digest, --digest     SHA-256 digest names in output
+  -service SERVICE, --endpoint SERVICE
+                        service : parse / gender / origin / diaspora / usraceethnicity
+  -e ENCODING, --encoding ENCODING
+                        encoding : UTF-8 by default
+  -usraceethnicityoption USRACEETHNICITYOPTION, --usraceethnicityoption USRACEETHNICITYOPTION
+                        extra usraceethnicity option USRACEETHNICITY-4CLASSES USRACEETHNICITY-4CLASSES-CLASSIC USRACEETHNICITY-6CLASSES
+
 ```
 
 ## Examples
@@ -82,6 +89,18 @@ To append gender to a list of id, first and last names, geographic context : id1
 ```bash
 python namsor_tools.py -apiKey <yourAPIKey> -w -header -uid -f fnlngeo -i samples/some_idfnlngeo.txt -service gender
 ```
+
+To append US'race'/ethnicity to a list of id, first and last names, geographic context : id12|John|Smith|US
+
+```bash
+python namsor_tools.py -apiKey <yourAPIKey> -w -header -uid -f fnlngeo -i samples/some_idfnlnUS.txt -service usraceethnicity
+```
+To append US'race'/ethnicity to a list of id, first and last names, geographic context : id12|John|Smith|US with option USRACEETHNICITY-6CLASSES
+
+```bash
+python namsor_tools.py -apiKey <yourAPIKey> -w -header -uid -f fnlngeo -i samples/some_idfnlnUS.txt -service usraceethnicity --usraceethnicityoption USRACEETHNICITY-6CLASSES
+```
+
 To parse name into first and last name components, a geographic context is recommended (esp. for Latam names) : id12|John Smith|US
 
 ```bash
