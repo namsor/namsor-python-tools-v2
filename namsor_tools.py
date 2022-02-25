@@ -81,7 +81,7 @@ SERVICES = [
 
 OUTPUT_DATA_PARSE_HEADER = ["firstNameParsed", "lastNameParsed", "nameParserType", "nameParserTypeAlt", "nameParserTypeScore", "script"]
 OUTPUT_DATA_GENDER_HEADER = ["likelyGender", "likelyGenderScore", "probabilityCalibrated", "genderScale", "script"]
-OUTPUT_DATA_ORIGIN_HEADER  = ["region", "topRegion", "subRegion", "countryOrigin", "countryOriginAlt", "countryOriginScore", "probabilityCalibrated", "probabilityAltCalibrated", "script"]
+OUTPUT_DATA_ORIGIN_HEADER  = ["region", "topRegion", "subRegion", "countryOrigin", "countryOriginAlt", "countryOriginScore", "probabilityCalibrated", "probabilityAltCalibrated", "countryOriginTop", "script"]
 OUTPUT_DATA_DIASPORA_HEADER = ["ethnicity", "ethnicityAlt", "ethnicityScore", "script"]
 OUTPUT_DATA_USRACEETHNICITY_HEADER = ["raceEthnicity", "raceEthnicityAlt", "raceEthnicityScore", "probabilityCalibrated", "probabilityAltCalibrated", "script"]
 OUTPUT_DATA_HEADERS = [
@@ -565,7 +565,7 @@ class NamsorTools:
                 writer.write(str(outputObj.likely_gender) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.probability_calibrated) + self.__separatorOut + str(outputObj.gender_scale) + self.__separatorOut + scriptName + self.__separatorOut)
             elif isinstance(outputObj, FirstLastNameOriginedOut):
                 scriptName = outputObj.script
-                writer.write(str(outputObj.region_origin) + self.__separatorOut + str(outputObj.top_region_origin) + self.__separatorOut + str(outputObj.sub_region_origin) + self.__separatorOut + str(outputObj.country_origin) + self.__separatorOut + str(outputObj.country_origin_alt) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.probability_calibrated) + self.__separatorOut + str(outputObj.probability_alt_calibrated) + self.__separatorOut + scriptName + self.__separatorOut)
+                writer.write(str(outputObj.region_origin) + self.__separatorOut + str(outputObj.top_region_origin) + self.__separatorOut + str(outputObj.sub_region_origin) + self.__separatorOut + str(outputObj.country_origin) + self.__separatorOut + str(outputObj.country_origin_alt) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.probability_calibrated) + self.__separatorOut + str(outputObj.probability_alt_calibrated) + self.__separatorOut + str(outputObj.countries_origin_top) + self.__separatorOut + scriptName + self.__separatorOut)
             elif isinstance(outputObj, FirstLastNameDiasporaedOut):
                 scriptName = outputObj.script
                 writer.write(str(outputObj.ethnicity) + self.__separatorOut + str(outputObj.ethnicity_alt) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + scriptName + self.__separatorOut)
