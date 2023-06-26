@@ -20,23 +20,22 @@ cd namsor-python-tools-v2
 
 ```bash
 python namsor_tools.py
-python3 namsor_tools.py [-h] -apiKey APIKEY -i INPUTFILE 
-                        [-countryIso2 COUNTRYISO2] [-o OUTPUTFILE] [-w] [-r] -f 
-                        INPUTDATAFORMAT [-header] [-uid] [-digest] 
-                        -service <gender|country|origin|parse|diaspora|usraceethnicity> 
-                        [-e ENCODING] [-usraceethnicityoption USRACEETHNICITYOPTION]                       
-```			   
+python3 namsor_tools.py  	[-h] -apiKey APIKEY -i INPUTFILE [-countryIso2 COUNTRYISO2] [-o OUTPUTFILE] [-w] 
+							[-r] -f INPUTDATAFORMAT [-header] [-uid] [-digest] -service SERVICE [-e ENCODING]
+							[-usraceethnicityoption USRACEETHNICITYOPTION]                   
+```
 
 ## Detailed usage		  
 
 ```	
 python3
-usage: namsor_tools.py [-h] -apiKey APIKEY -i INPUTFILE [-countryIso2 COUNTRYISO2] [-o OUTPUTFILE] [-w] [-r] -f INPUTDATAFORMAT [-header] [-uid] [-digest] -service SERVICE [-e ENCODING]
-                       [-usraceethnicityoption USRACEETHNICITYOPTION]
+usage: namsor_tools.py 	[-h] -apiKey APIKEY -i INPUTFILE [-countryIso2 COUNTRYISO2] [-o OUTPUTFILE] [-w] 
+						[-r] -f INPUTDATAFORMAT [-header] [-uid] [-digest] -service SERVICE [-e ENCODING]
+						[-usraceethnicityoption USRACEETHNICITYOPTION]
 
-Main parcer for namsor_commandline_tool
+Main parser for namsor_commandline_tool
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -apiKey APIKEY, --apiKey APIKEY
                         NamSor API Key
@@ -49,32 +48,43 @@ optional arguments:
   -w, --overwrite       overwrite existing output file
   -r, --recover         continue from a job (requires uid)
   -f INPUTDATAFORMAT, --inputDataFormat INPUTDATAFORMAT
-                        input data format : first name, last name (fnln) / first name, last name, geo country iso2 (fnlngeo) / full name (name) / full name, geo country iso2 (namegeo)
+                        input data format : first name, last name (fnln) / first name, last name, geo country iso2
+                        (fnlngeo) / / first name, last name, geo country iso2, subdivision (fnlngeosub) / full name
+                        (name) / full name, geo country iso2 (namegeo) / full name, geo country iso2, subdivision
+                        (namegeosub)
   -header, --header     output header
   -uid, --uid           input data has an ID prefix
   -digest, --digest     SHA-256 digest names in output
   -service SERVICE, --endpoint SERVICE
-                        service : parse / gender / origin / diaspora / usraceethnicity
+                        service : parse / gender / origin / country / diaspora / usraceethnicity / religion /
+                        castegroup
   -e ENCODING, --encoding ENCODING
                         encoding : UTF-8 by default
   -usraceethnicityoption USRACEETHNICITYOPTION, --usraceethnicityoption USRACEETHNICITYOPTION
-                        extra usraceethnicity option USRACEETHNICITY-4CLASSES USRACEETHNICITY-4CLASSES-CLASSIC USRACEETHNICITY-6CLASSES
-
+                        extra usraceethnicity option USRACEETHNICITY-4CLASSES USRACEETHNICITY-4CLASSES-CLASSIC
+                        USRACEETHNICITY-6CLASSES
 ```
 
 ## Examples
 
-To append gender to a list of first and last names : John|Smith
+To append the likely name gender to a list of first and last names : John|Smith
 
 ```bash
 python namsor_tools.py -apiKey <yourAPIKey> -w -header -f fnln -i samples/some_fnln.txt -service gender
 ```
 
-To append origin to a list of first and last names : John|Smith
+To append the likely name origin to a list of first and last names : John|Smith
 
 ```bash
 python namsor_tools.py -apiKey <yourAPIKey> -w -header -f fnln -i samples/some_fnln.txt -service origin
 ```
+
+To append the likely country of residence to a list of full names : John Smith
+
+```bash
+python namsor_tools.py -apiKey <yourAPIKey> -w -header -f name -i samples/some_name.txt -service country
+```
+
 
 To parse names into first and last name components (John Smith or Smith, John -> John|Smith)
 
@@ -88,6 +98,12 @@ To append gender to a list of id, first and last names, geographic context : id1
 
 ```bash
 python namsor_tools.py -apiKey <yourAPIKey> -w -header -uid -f fnlngeo -i samples/some_idfnlngeo.txt -service gender
+```
+
+To append the ethnicity (in the sense of cultural heritage / country of origin of ascendents) from a list of id, first and last names, geographic context : id12|John|Smith|US
+
+```bash
+python namsor_tools.py -apiKey <yourAPIKey> -w -header -uid -f fnlngeo -i samples/some_idfnlngeo.txt -service diaspora
 ```
 
 To append US'race'/ethnicity to a list of id, first and last names, geographic context : id12|John|Smith|US
@@ -111,6 +127,26 @@ On large input files with a unique ID, it is possible to recover from where the 
 ```bash
 python namsor_tools.py -apiKey <yourAPIKey> -r -header -uid -f fnlngeo -i samples/some_idfnlngeo.txt -service gender
 ```
+
+For Indian names (for now), you can infer the likely india state or union territory (ie. a subdivision of the country as per ISO 3166-2:IN)
+
+```bash
+python namsor_tools.py -apiKey <yourAPIKey>  -r -header -uid -f fnlngeo -i samples/some_indian_idfnlngeo.txt -service subdivision
+```
+
+For Indian names (for now), you can infer the likely religion (provided the IN country code and state/union territory as per ISO 3166-2:IN)
+
+```bash
+python namsor_tools.py -apiKey <yourAPIKey>  -r -header -uid -f namegeosub -i samples/some_indian_idnamegeosub.txt -service subdivision
+```
+
+For Indian names (for now), you can infer the likely caste group (provided the IN country code and state/union territory as per ISO 3166-2:IN)
+
+```bash
+python namsor_tools.py -apiKey <yourAPIKey>  -r -header -uid -f namegeosub -i samples/some_indian_idnamegeosub.txt -service castegroup
+```
+
+
 ## Anonymizing output data
 The -digest option will digest personal names in file outpus, using a non reversible MD-5 hash. For example, John Smith will become 6117323d2cabbc17d44c2b44587f682c.
 Please note that this doesn't apply to the PARSE output. 

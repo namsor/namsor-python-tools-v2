@@ -1,7 +1,5 @@
+id12|John W.|Smith|US
 id15|Robert|Durieux|US
-id17|Boris|Johnson|US
-id18|Ualoheke Akua|Kupaa|US
-id19|Alvaro|Ramirez|US
-id20|Michael|Jackson|US
-id21|Jeremy|Pierce|US
-id22|Jing|Cao|US
+id16|Jordan|Jackson|US
+id17|Carmen|Garcia|US
+id20|Jing|Cao|US

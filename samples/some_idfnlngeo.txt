@@ -1,6 +1,7 @@
 id12|John W.|Smith|US
-id13|Mary|Smith|US
-id14|Elena|Rossi|US
-id15|Robert|Durieux|US
-id17|Boris|Johnson|US
-id18|Ualoheke Akua|Kupaa|US
+id13|Mary|Smith|GB
+id14|Elena|Rossi|IT
+id15|Robert|Durieux|FR
+id19|Jing|Cao|CN
+id22|Elena|Petrovna|RU
+id23|Mohammed|Ramzi|MA

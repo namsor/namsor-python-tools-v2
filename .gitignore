@@ -102,3 +102,4 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+samples/some_fnln.txt.origin.namsor_py.txt
