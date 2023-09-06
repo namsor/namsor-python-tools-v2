@@ -103,3 +103,5 @@ venv.bak/
 # mypy
 .mypy_cache/
 samples/some_fnln.txt.origin.namsor_py.txt
+.vscode/launch.json
+samples/some_fnln.txt.gender.namsor_py.txt

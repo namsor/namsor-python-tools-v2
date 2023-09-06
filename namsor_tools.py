@@ -15,10 +15,10 @@ from namsor_exception import NamSorToolException
 
 #API imports
 import openapi_client
-from openapi_client import AdminApi
-from openapi_client import PersonalApi
+from openapi_client.apis.tags import admin_api
+from openapi_client.apis.tags import personal_api
 from openapi_client import ApiClient
-from openapi_client import IndianApi
+from openapi_client.apis.tags import indian_api
 from openapi_client.rest import ApiException
 
 #import models
@@ -164,7 +164,6 @@ class NamsorTools:
         configuration.api_key['X-API-KEY'] = commandLineOptions["apiKey"]
         configuration.__TIMEOUT = self.__TIMEOUT
         
-
         if commandLineOptions["usraceethnicityoption"] :
             self.__client = ApiClient(configuration,NAMSOR_OPTION_USRACEETHNICITY_TAXO,commandLineOptions["usraceethnicityoption"])
             self.__usraceethnicityoption = commandLineOptions["usraceethnicityoption"]
@@ -175,10 +174,14 @@ class NamsorTools:
             # add a new http header for religion stats to API client
             self.__client.set_default_header(NAMSOR_OPTION_RELIGION_STATS, "True")
             self.__religionoption = True
+        
+        # need to explicitely set API Key (was previously part of configuration)
+        self.__client.set_default_header('X-API-KEY', commandLineOptions["apiKey"])
 
-        self.__api = PersonalApi(self.__client)
-        self.__indianApi = IndianApi(self.__client)
-        self.__adminApi = AdminApi(self.__client)
+
+        self.__api = personal_api.PersonalApi(self.__client)
+        self.__indianApi = indian_api.IndianApi(self.__client)
+        self.__adminApi = admin_api.AdminApi(self.__client)
         self.__withUID = commandLineOptions["uid"]
 
         self.__recover = commandLineOptions["recover"]
@@ -269,10 +272,11 @@ class NamsorTools:
                         col+=1
                         lastName = lineData[col]
                         col+=1
-                        firstLastNameIn = FirstLastNameIn()
-                        firstLastNameIn.id = uid
-                        firstLastNameIn.first_name = firstName
-                        firstLastNameIn.last_name = str(lastName.replace("\n",""))
+                        firstLastNameIn = FirstLastNameIn(
+                        id = uid,
+                        firstName = firstName,
+                        lastName = str(lastName.replace("\n",""))
+                        )
                         self.__firstLastNamesIn[uid] = firstLastNameIn
                     elif inputDataFormat == INPUT_DATA_FORMAT_FNLNGEO :
                         firstName = lineData[col]
@@ -283,18 +287,20 @@ class NamsorTools:
                         col+=1
                         if ((countryIso2 == None or not countryIso2.strip()) and countryIso2Default != None):
                             countryIso2 = countryIso2Default
-                        firstLastNameGeoIn = FirstLastNameGeoIn()
-                        firstLastNameGeoIn.id = uid
-                        firstLastNameGeoIn.first_name = firstName
-                        firstLastNameGeoIn.last_name = lastName.replace("\n","")
+                        firstLastNameGeoIn = FirstLastNameGeoIn(
+                        id = uid,
+                        first_name = firstName,
+                        last_name = lastName.replace("\n","")
+                        )
                         firstLastNameGeoIn.country_iso2 = countryIso2.replace("\n","")
                         self.__firstLastNamesGeoIn[uid] = firstLastNameGeoIn
                     elif inputDataFormat == INPUT_DATA_FORMAT_FULLNAME :
                         fullName = lineData[col]
                         col+=1
-                        personalNameIn = PersonalNameIn()
-                        personalNameIn.id = uid
-                        personalNameIn.name = fullName.replace("\n","")
+                        personalNameIn = PersonalNameIn(
+                        id = uid,
+                        name = fullName.replace("\n","")
+                        )
                         self.__personalNamesIn[uid] = personalNameIn
                     elif (inputDataFormat == INPUT_DATA_FORMAT_FULLNAMEGEO):
                         fullName = lineData[col]
@@ -303,10 +309,11 @@ class NamsorTools:
                         col+=1
                         if ((countryIso2 == None) or not countryIso2.strip()) and countryIso2Default != None:
                             countryIso2 = countryIso2Default
-                        personalNameGeoIn = PersonalNameGeoIn()
-                        personalNameGeoIn.id = uid
-                        personalNameGeoIn.name = fullName.replace("\n","")
-                        personalNameGeoIn.country_iso2 = countryIso2.replace("\n","")
+                        personalNameGeoIn = PersonalNameGeoIn(
+                        id = uid,
+                        name = fullName.replace("\n",""),
+                        country_iso2 = countryIso2.replace("\n","")
+                        )
                         self.__personalNamesGeoIn[uid] = personalNameGeoIn
                     elif (inputDataFormat == INPUT_DATA_FORMAT_FULLNAMEGEOSUB):
                         fullName = lineData[col]
@@ -317,10 +324,11 @@ class NamsorTools:
                             countryIso2 = countryIso2Default
                         subDivisionIso31662 = lineData[col]
                         col+=1
-                        personalNameGeoIn = PersonalNameGeoSubdivisionIn()
-                        personalNameGeoIn.id = uid
-                        personalNameGeoIn.name = fullName.replace("\n","")
-                        personalNameGeoIn.country_iso2 = countryIso2.replace("\n","")
+                        personalNameGeoIn = PersonalNameGeoSubdivisionIn(
+                        id = uid,
+                        name = fullName.replace("\n",""),
+                        country_iso2 = countryIso2.replace("\n","")
+                        )
                         personalNameGeoIn.subdivision_iso = subDivisionIso31662.replace("\n","")
                         self.__personalNamesGeoSubIn[uid] = personalNameGeoIn
 
@@ -344,7 +352,8 @@ class NamsorTools:
             raise NamSorToolException("Missing API KEY")
         softwareNameAndVersion = None
         try:
-            softwareNameAndVersion = self.__adminApi.software_version().software_name_and_version
+            softwareNameAndVersion = self.__adminApi.software_version().body['softwareNameAndVersion']
+            print("NamSor software name and version : ", softwareNameAndVersion)
         except ApiException as ex:
             logging.getLogger(NamsorTools.__class__.__name__).log(logging.CRITICAL, None, ex)
             raise NamSorToolException("Can't get the API version " + ex)
@@ -433,12 +442,13 @@ class NamsorTools:
     #names -> list[FirstLastNameGeoIn]
     def processDiaspora(self, names):
         result = {}
-        body = BatchFirstLastNameGeoIn()
-        body.personal_names = names
-        origined:BatchFirstLastNameDiasporaedOut = self.__api.diaspora_batch(batch_first_last_name_geo_in=body)
+        body = BatchFirstLastNameGeoIn(
+        personalNames = names
+        )
+        origined:BatchFirstLastNameDiasporaedOut = self.__api.diaspora_batch(body=body)
 
-        for personalName in origined.personal_names:
-            result[personalName.id] = personalName
+        for personalName in origined.body["personalNames"]:
+            result[personalName["id"]] = personalName
 
         return result
 
@@ -446,11 +456,11 @@ class NamsorTools:
     def processOriginGeo(self, names):
         namesNoGeo = []
         for name in names:
-            nameNoGeo = FirstLastNameIn()
-            nameNoGeo.id = name.id
-            nameNoGeo.first_name = name.first_name
-            nameNoGeo.last_name = name.last_name
-
+            nameNoGeo = FirstLastNameIn(
+            id = name.id,
+            firstName = name.first_name,
+            lastName = name.last_name
+            )
             namesNoGeo.append(nameNoGeo)
 
         return self.processOrigin(namesNoGeo)
@@ -459,12 +469,13 @@ class NamsorTools:
     #names -> list[FirstLastNameIn]
     def processOrigin(self, names):
         result = {}
-        body = BatchFirstLastNameIn()
-        body.personal_names = names
-        origined = self.__api.origin_batch(batch_first_last_name_in=body)
+        body = BatchFirstLastNameIn(
+        personalNames = names
+        )
+        origined = self.__api.origin_batch(body=body)
 
-        for personalName in origined.personal_names:
-            result[personalName.id] = personalName
+        for personalName in origined.body["personalNames"]:
+            result[personalName["id"]] = personalName
 
         return result
 
@@ -472,60 +483,65 @@ class NamsorTools:
     #names -> list[FirstLastNameIn]
     def processGender(self, names):
         result = {}
-        body = BatchFirstLastNameIn()
-        body.personal_names = names
-        gendered = self.__api.gender_batch(batch_first_last_name_in=body)
+        body = BatchFirstLastNameIn(
+            personalNames = names
+        )
+        gendered = self.__api.gender_batch(body=body)
 
-        for personalName in gendered.personal_names:
-            result[personalName.id] = personalName
+        for personalName in gendered.body["personalNames"]:
+            result[personalName["id"]] = personalName
 
         return result
 
     #names -> list[PersonalNameIn]
     def processGenderFull(self, names):
         result = {}
-        body = BatchPersonalNameIn()
-        body.personal_names = names
-        gendered = self.__api.gender_full_batch(batch_personal_name_in=body)
+        body = BatchPersonalNameIn(
+            personalNames = names
+        )
+        gendered = self.__api.gender_full_batch(body=body)
 
-        for personalName in gendered.personal_names:
-            result[personalName.id] = personalName
+        for personalName in gendered.body["personalNames"]:
+            result[personalName["id"]] = personalName
 
         return result
 
     #names -> list[PersonalNameIn]
     def processCountry(self, names):
         result = {}
-        body = BatchPersonalNameIn()
-        body.personal_names = names
-        countries = self.__api.country_batch(batch_personal_name_in=body)
+        body = BatchPersonalNameIn(
+            personalNames = names
+        )
+        countries = self.__api.country_batch(body=body)
 
-        for personalName in countries.personal_names:
-            result[personalName.id] = personalName
+        for personalName in countries.body["personalNames"]:
+            result[personalName["id"]] = personalName
 
         return result
 
     #names -> list[PersonalNameGeoIn]
     def processGenderFullGeo(self, names):
         result = {}
-        body = BatchPersonalNameGeoIn()
-        body.personal_names = names
-        gendered = self.__api.gender_full_geo_batch(batch_personal_name_geo_in=body)
+        body = BatchPersonalNameGeoIn(
+            personalNames = names
+        )
+        gendered = self.__api.gender_full_geo_batch(body=body)
 
-        for personalName in gendered.personal_names:
-            result[personalName.id] = personalName
+        for personalName in gendered.body["personalNames"]:
+            result[personalName["id"]] = personalName
 
         return result
 
     #names -> list[PersonalNameGeoSubIn]
     def processReligion(self, names):
         result = {}
-        body = BatchPersonalNameGeoSubdivisionIn()
-        body.personal_names = names
-        religioned = self.__api.religion_full_batch(batch_personal_name_geo_subdivision_in=body)
+        body = BatchPersonalNameGeoSubdivisionIn(
+            personalNames = names
+        )
+        religioned = self.__api.religion_full_batch(body=body)
 
-        for personalName in religioned.personal_names:
-            result[personalName.id] = personalName
+        for personalName in religioned.body["personalNames"]:
+            result[personalName["id"]] = personalName
 
         return result
 
@@ -535,10 +551,11 @@ class NamsorTools:
 
         result = []
         for name in names:
-            nameNoGeo = PersonalNameSubdivisionIn()
-            nameNoGeo.id = name.id
-            nameNoGeo.name = name.name
-            nameNoGeo.subdivision_iso = name.subdivision_iso
+            nameNoGeo = PersonalNameSubdivisionIn(
+            id = name.id,
+            name = name.name,
+            subdivisionIso = name.subdivision_iso
+            )
             result.append(nameNoGeo)
         return result
 
@@ -546,12 +563,13 @@ class NamsorTools:
     #names -> list[PersonalNameGeoSubIn]
     def processCastegroup(self, names):
         result = {}
-        body = BatchPersonalNameGeoSubdivisionIn()
-        body.personal_names = self.adaptIndia(names)
-        religioned = self.__indianApi.castegroup_indian_full_batch(batch_personal_name_subdivision_in=body)
+        body = BatchPersonalNameGeoSubdivisionIn(
+            personalNames = self.adaptIndia(names)
+        )
+        religioned = self.__indianApi.castegroup_indian_full_batch(body=body)
 
-        for personalName in religioned.personal_names:
-            result[personalName.id] = personalName
+        for personalName in religioned.body["personalNames"]:
+            result[personalName["id"]] = personalName
 
         return result
 
@@ -560,60 +578,65 @@ class NamsorTools:
     #names -> list[PersonalNameIn]
     def processParse(self, names):
         result = {}
-        body = BatchPersonalNameIn()
-        body.personal_names = names
-        parsed = self.__api.parse_name_batch(batch_personal_name_in=body)
+        body = BatchPersonalNameIn(
+            personalNames = names
+        )
+        parsed = self.__api.parse_name_batch(body=body)
 
-        for personalName in parsed.personal_names:
-            result[personalName.id] = personalName
+        for personalName in parsed.body["personalNames"]:
+            result[personalName["id"]] = personalName
 
         return result
 
     #names -> list[FirstLastNameGeoIn]
     def processGenderGeo(self, names):
         result = {}
-        body = BatchFirstLastNameGeoIn()
-        body.personal_names = names
-        gendered = self.__api.gender_geo_batch(batch_first_last_name_geo_in=body)
+        body = BatchFirstLastNameGeoIn(
+            personalNames = names
+        )
+        gendered = self.__api.gender_geo_batch(body=body)
 
-        for personalName in gendered.personal_names:
-            result[personalName.id] = personalName
+        for personalName in gendered.body["personalNames"]:
+            result[personalName["id"]] = personalName
 
         return result
 
     #names -> list[FirstLastNameGeoIn]
     def processSubdivision(self, names):
         result = {}
-        body = BatchFirstLastNameGeoIn()
-        body.personal_names = names
-        subdivisioned = self.__api.subclassification_batch(batch_first_last_name_geo_in=body)
+        body = BatchFirstLastNameGeoIn(
+            personalNames = names
+        )
+        subdivisioned = self.__api.subclassification_batch(body=body)
 
-        for personalName in subdivisioned.personal_names:
-            result[personalName.id] = personalName
+        for personalName in subdivisioned.body["personalNames"]:
+            result[personalName["id"]] = personalName
 
         return result
 
     #names -> list[PersonalNameGeoIn]
     def processParseGeo(self, names):
         result = {}
-        body = BatchPersonalNameGeoIn()
-        body.personal_names = names
-        parsed = self.__api.parse_name_geo_batch(batch_personal_name_geo_in=body)
+        body = BatchPersonalNameGeoIn(
+            personalNames = names
+        )
+        parsed = self.__api.parse_name_geo_batch(body=body)
 
-        for personalName in parsed.personal_names:
-            result[personalName.id] = personalName
+        for personalName in parsed.body["personalNames"]:
+            result[personalName["id"]] = personalName
 
         return result
 
     #names -> list[FirstLastNameGeoIn]
     def processUSRaceEthnicity(self, names):
         result = {}
-        body = BatchFirstLastNameGeoIn()
-        body.personal_names = names
-        racedEthnicized = self.__api.us_race_ethnicity_batch(batch_first_last_name_geo_in=body)
+        body = BatchFirstLastNameGeoIn(
+            personalNames = names
+        )
+        racedEthnicized = self.__api.us_race_ethnicity_batch(body=body)
 
-        for personalName in racedEthnicized.personal_names:
-            result[personalName.id] = personalName
+        for personalName in racedEthnicized.body["personalNames"]:
+            result[personalName["id"]] = personalName
 
         return result
 
@@ -705,15 +728,15 @@ class NamsorTools:
             writer.write(uid+self.__separatorOut)
 
             if isinstance(inputObj, FirstLastNameIn):
-                writer.write(self.digest(inputObj.first_name) + self.__separatorOut + self.digest(inputObj.last_name) + self.__separatorOut)
+                writer.write(self.digest(inputObj["firstName"]) + self.__separatorOut + self.digest(inputObj["lastName"]) + self.__separatorOut)
             elif isinstance(inputObj, FirstLastNameGeoIn):
-                writer.write(self.digest(inputObj.first_name) + self.__separatorOut + self.digest(inputObj.last_name) + self.__separatorOut + inputObj.country_iso2 + self.__separatorOut)
+                writer.write(self.digest(inputObj["firstName"]) + self.__separatorOut + self.digest(inputObj["lastName"]) + self.__separatorOut + inputObj["countryIso2"] + self.__separatorOut)
             elif isinstance(inputObj, PersonalNameIn):
-                writer.write(self.digest(inputObj.name) + self.__separatorOut)
+                writer.write(self.digest(inputObj["name"]) + self.__separatorOut)
             elif isinstance(inputObj, PersonalNameGeoIn):
-                writer.write(self.digest(inputObj.name) + self.__separatorOut + inputObj.country_iso2 + self.__separatorOut)
+                writer.write(self.digest(inputObj["name"]) + self.__separatorOut + inputObj["countryIso2"] + self.__separatorOut)
             elif isinstance(inputObj, PersonalNameGeoSubdivisionIn):
-                writer.write(self.digest(inputObj.name) + self.__separatorOut + inputObj.country_iso2 + self.__separatorOut + inputObj.subdivision_iso + self.__separatorOut)
+                writer.write(self.digest(inputObj["name"]) + self.__separatorOut + inputObj["countryIso2"] + self.__separatorOut + inputObj["subdivisionIso"] + self.__separatorOut)
             else:
                 raise ValueError("Serialization of " + inputObj.__class__.__name__ + " not supported")
 
@@ -721,46 +744,46 @@ class NamsorTools:
                 for outputHeader in outputHeaders:
                     writer.write("" + self.__separatorOut)
             elif isinstance(outputObj, FirstLastNameGenderedOut):
-                scriptName = outputObj.script
-                writer.write(str(outputObj.likely_gender) + self.__separatorOut + str(outputObj.probability_calibrated) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.gender_scale) + self.__separatorOut + scriptName + self.__separatorOut)
+                scriptName = outputObj["script"]
+                writer.write(str(outputObj["likelyGender"]) + self.__separatorOut + str(outputObj["probabilityCalibrated"]) + self.__separatorOut + str(outputObj["score"]) + self.__separatorOut + str(outputObj["genderScale"]) + self.__separatorOut + scriptName + self.__separatorOut)
             elif isinstance(outputObj, FirstLastNameOriginedOut):
-                scriptName = outputObj.script
-                writer.write(str(outputObj.region_origin) + self.__separatorOut + str(outputObj.top_region_origin) + self.__separatorOut + str(outputObj.sub_region_origin) + self.__separatorOut + str(outputObj.country_origin) + self.__separatorOut + str(outputObj.country_origin_alt) + self.__separatorOut + str(outputObj.probability_calibrated) + self.__separatorOut + str(outputObj.probability_alt_calibrated) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.countries_origin_top) + self.__separatorOut + scriptName + self.__separatorOut)
+                scriptName = outputObj["script"]
+                writer.write(str(outputObj["regionOrigin"]) + self.__separatorOut + str(outputObj["topRegionOrigin"]) + self.__separatorOut + str(outputObj["subRegionOrigin"]) + self.__separatorOut + str(outputObj["countryOrigin"]) + self.__separatorOut + str(outputObj["countryOriginAlt"]) + self.__separatorOut + str(outputObj["probabilityCalibrated"]) + self.__separatorOut + str(outputObj["probabilityAltCalibrated"]) + self.__separatorOut + str(outputObj["score"]) + self.__separatorOut + str(outputObj["countriesOriginTop"]) + self.__separatorOut + scriptName + self.__separatorOut)
                 if self.__religionoption :
                     # create a function to append religion stats to the output
-                    self.appendReligionStat(writer, outputObj.religion_stats, outputObj.religion_stats_alt)
+                    self.appendReligionStat(writer, outputObj["religionStats"], outputObj["religionStatsAlt"])
             elif isinstance(outputObj, FirstLastNameGeoSubclassificationOut):
-                scriptName = outputObj.script
-                writer.write(str(outputObj.sub_classification) + self.__separatorOut + str(outputObj.sub_classification_alt) + self.__separatorOut + str(outputObj.probability_calibrated) + self.__separatorOut + str(outputObj.probability_alt_calibrated) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.subclassification_top) + self.__separatorOut + scriptName + self.__separatorOut)
+                scriptName = outputObj["script"]
+                writer.write(str(outputObj["subClassification"]) + self.__separatorOut + str(outputObj["subClassificationAlt"]) + self.__separatorOut + str(outputObj["probabilityCalibrated"]) + self.__separatorOut + str(outputObj["probabilityAltCalibrated"]) + self.__separatorOut + str(outputObj["score"]) + self.__separatorOut + str(outputObj["subclassificationTop"]) + self.__separatorOut + scriptName + self.__separatorOut)
             elif isinstance(outputObj, PersonalNameReligionedOut):
-                scriptName = outputObj.script
-                writer.write(str(outputObj.religion) + self.__separatorOut + str(outputObj.religion_alt) + self.__separatorOut + str(outputObj.probability_calibrated) + self.__separatorOut + str(outputObj.probability_alt_calibrated) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.religions_top) + self.__separatorOut + scriptName + self.__separatorOut)
+                scriptName = outputObj["script"]
+                writer.write(str(outputObj["religion"]) + self.__separatorOut + str(outputObj["religionAlt"]) + self.__separatorOut + str(outputObj["probabilityCalibrated"]) + self.__separatorOut + str(outputObj["probabilityAltCalibrated"]) + self.__separatorOut + str(outputObj["score"]) + self.__separatorOut + str(outputObj["religionsTop"]) + self.__separatorOut + scriptName + self.__separatorOut)
             elif isinstance(outputObj, PersonalNameCastegroupOut):
-                scriptName = outputObj.script
-                writer.write(str(outputObj.castegroup) + self.__separatorOut + str(outputObj.castegroup_alt) + self.__separatorOut + str(outputObj.probability_calibrated) + self.__separatorOut + str(outputObj.probability_alt_calibrated) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.castegroup_top) + self.__separatorOut + scriptName + self.__separatorOut)
+                scriptName = outputObj["script"]
+                writer.write(str(outputObj["castegroup"]) + self.__separatorOut + str(outputObj["castegroupAlt"]) + self.__separatorOut + str(outputObj["probabilityCalibrated"]) + self.__separatorOut + str(outputObj["probabilityAltCalibrated"]) + self.__separatorOut + str(outputObj["score"]) + self.__separatorOut + str(outputObj["castegroupTop"]) + self.__separatorOut + scriptName + self.__separatorOut)
             elif isinstance(outputObj, PersonalNameGeoOut):
-                scriptName = outputObj.script
-                writer.write(str(outputObj.region) + self.__separatorOut + str(outputObj.top_region) + self.__separatorOut + str(outputObj.sub_region) + self.__separatorOut + str(outputObj.country) + self.__separatorOut + str(outputObj.country_alt) + self.__separatorOut + str(outputObj.probability_calibrated) + self.__separatorOut + str(outputObj.probability_alt_calibrated) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.countries_top) + self.__separatorOut + scriptName + self.__separatorOut)
+                scriptName = outputObj["script"]
+                writer.write(str(outputObj["region"]) + self.__separatorOut + str(outputObj["topRegion"]) + self.__separatorOut + str(outputObj["subRegion"]) + self.__separatorOut + str(outputObj["country"]) + self.__separatorOut + str(outputObj["countryAlt"]) + self.__separatorOut + str(outputObj["probabilityCalibrated"]) + self.__separatorOut + str(outputObj["probabilityAltCalibrated"]) + self.__separatorOut + str(outputObj["score"]) + self.__separatorOut + str(outputObj["countriesTop"]) + self.__separatorOut + scriptName + self.__separatorOut)
                 if self.__religionoption :
                     # create a function to append religion stats to the output
-                    self.appendReligionStat(writer, outputObj.religion_stats, outputObj.religion_stats_alt)
+                    self.appendReligionStat(writer, outputObj["religionStats"], outputObj["religionStatsAlt"])
             elif isinstance(outputObj, FirstLastNameDiasporaedOut):
-                scriptName = outputObj.script
-                writer.write(str(outputObj.ethnicity) + self.__separatorOut + str(outputObj.ethnicity_alt) + self.__separatorOut + str(outputObj.probability_calibrated) + self.__separatorOut + str(outputObj.probability_alt_calibrated) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.ethnicities_top)+ self.__separatorOut + scriptName + self.__separatorOut)
+                scriptName = outputObj["script"]
+                writer.write(str(outputObj["ethnicity"]) + self.__separatorOut + str(outputObj["ethnicityAlt"]) + self.__separatorOut + str(outputObj["probabilityCalibrated"]) + self.__separatorOut + str(outputObj["probabilityAltCalibrated"]) + self.__separatorOut + str(outputObj["score"]) + self.__separatorOut + str(outputObj["ethnicitiesTop"])+ self.__separatorOut + scriptName + self.__separatorOut)
                 if self.__religionoption :
                     # create a function to append religion stats to the output
-                    self.appendReligionStat(writer, outputObj.religion_stats, outputObj.religion_stats_alt)
+                    self.appendReligionStat(writer, outputObj["religionStats"], outputObj["religionStatsAlt"])
             elif isinstance(outputObj, FirstLastNameUSRaceEthnicityOut):
-                scriptName = outputObj.script
-                writer.write(str(outputObj.race_ethnicity) + self.__separatorOut + str(outputObj.race_ethnicity_alt) + self.__separatorOut + str(outputObj.probability_calibrated)  + self.__separatorOut + str(outputObj.probability_alt_calibrated) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.race_ethnicities_top) + self.__separatorOut + scriptName + self.__separatorOut)
+                scriptName = outputObj["script"]
+                writer.write(str(outputObj["raceEthnicity"]) + self.__separatorOut + str(outputObj["raceEthnicityAlt"]) + self.__separatorOut + str(outputObj["probabilityCalibrated"])  + self.__separatorOut + str(outputObj["probabilityAltCalibrated"]) + self.__separatorOut + str(outputObj["score"]) + self.__separatorOut + str(outputObj["raceEthnicitiesTop"]) + self.__separatorOut + scriptName + self.__separatorOut)
             elif isinstance(outputObj, PersonalNameGenderedOut):
-                scriptName = outputObj.script
-                writer.write(str(outputObj.likely_gender) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + str(outputObj.probability_calibrated) + self.__separatorOut + str(outputObj.gender_scale) + self.__separatorOut + scriptName + self.__separatorOut)
+                scriptName = outputObj["script"]
+                writer.write(str(outputObj["likelyGender"]) + self.__separatorOut + str(outputObj["score"]) + self.__separatorOut + str(outputObj["probabilityCalibrated"]) + self.__separatorOut + str(outputObj["genderScale"]) + self.__separatorOut + scriptName + self.__separatorOut)
             elif isinstance(outputObj, PersonalNameParsedOut):
-                firstNameParsed = outputObj.first_last_name.first_name if outputObj.first_last_name else ""
-                lastNameParsed = outputObj.first_last_name.last_name if outputObj.first_last_name else ""
-                scriptName = outputObj.script
-                writer.write(firstNameParsed + self.__separatorOut + lastNameParsed + self.__separatorOut + str(outputObj.name_parser_type) + self.__separatorOut + str(outputObj.name_parser_type_alt) + self.__separatorOut + str(outputObj.score) + self.__separatorOut + scriptName + self.__separatorOut)
+                firstNameParsed = outputObj["firstLastName"]["firstName"] if outputObj["firstLastName"] else ""
+                lastNameParsed = outputObj["firstLastName"]["lastName"] if outputObj["firstLastName"] else ""
+                scriptName = outputObj["script"]
+                writer.write(firstNameParsed + self.__separatorOut + lastNameParsed + self.__separatorOut + str(outputObj["nameParserType"]) + self.__separatorOut + str(outputObj["nameParserTypeAlt"]) + self.__separatorOut + str(outputObj["score"]) + self.__separatorOut + scriptName + self.__separatorOut)
             else:
                 raise ValueError("Serialization of " + outputObj.__class__.__name__ + " not supported")
 
